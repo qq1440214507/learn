@@ -1,0 +1,4 @@
+### 登录测试
+GET http://localhost:8080/user/login
+###其他测试
+GET http://localhost:8080/info/name
