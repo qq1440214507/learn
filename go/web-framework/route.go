@@ -1,13 +1,16 @@
 package main
 
-import "web-framework/framework"
+import (
+	"web-framework/framework"
+)
 
 func registerRouter(core *framework.Core) {
 	// 静态路由+HTTP方法匹配
-	core.Get("/user/login", UserLoginController)
+	core.Get("/user/login", Test3(), UserLoginController)
 
 	// 批量通用前缀
 	subjectApi := core.Group("/subject")
+	subjectApi.Use(Test3())
 	{
 		// 动态路由
 		subjectApi.Delete("/:id", SubjectDelController)

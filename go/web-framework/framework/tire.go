@@ -9,10 +9,10 @@ type Tree struct {
 	root *node
 }
 type node struct {
-	isLast  bool
-	segment string
-	handler ControllerHandler
-	childs  []*node
+	isLast   bool
+	segment  string
+	handlers []ControllerHandler
+	children []*node
 }
 
 // 判断是否 : 开通  通用匹配
@@ -22,14 +22,14 @@ func isWildSegment(segment string) bool {
 
 // 获取满足匹配规则的子节点
 func (n *node) filterChildNodes(segment string) []*node {
-	if len(n.childs) == 0 {
+	if len(n.children) == 0 {
 		return nil
 	}
 	if isWildSegment(segment) {
-		return n.childs
+		return n.children
 	}
-	nodes := make([]*node, 0, len(n.childs))
-	for _, childNode := range n.childs {
+	nodes := make([]*node, 0, len(n.children))
+	for _, childNode := range n.children {
 		if isWildSegment(childNode.segment) {
 			nodes = append(nodes, childNode)
 		} else if childNode.segment == segment {
@@ -73,12 +73,12 @@ func (n *node) matchNode(uri string) *node {
 }
 func newNode() *node {
 	return &node{
-		isLast:  false,
-		segment: "",
-		childs:  []*node{},
+		isLast:   false,
+		segment:  "",
+		children: []*node{},
 	}
 }
-func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
+func (tree *Tree) AddRouter(uri string, handlers []ControllerHandler) error {
 	n := tree.root
 	// 路由冲突
 	if n.matchNode(uri) != nil {
@@ -105,9 +105,9 @@ func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
 			childNode.segment = segment
 			if isLast {
 				childNode.isLast = true
-				childNode.handler = handler
+				childNode.handlers = handlers
 			}
-			n.childs = append(n.childs, childNode)
+			n.children = append(n.children, childNode)
 			objNode = childNode
 		}
 		n = objNode
@@ -115,12 +115,12 @@ func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
 	return nil
 }
 
-func (tree *Tree) FindHandler(uri string) ControllerHandler {
+func (tree *Tree) FindHandler(uri string) []ControllerHandler {
 	matchNode := tree.root.matchNode(uri)
 	if matchNode == nil {
 		return nil
 	}
-	return matchNode.handler
+	return matchNode.handlers
 }
 
 func NewTree() *Tree {
