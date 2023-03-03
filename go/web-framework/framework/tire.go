@@ -13,6 +13,7 @@ type node struct {
 	segment  string
 	handlers []ControllerHandler
 	children []*node
+	parent   *node
 }
 
 // 判断是否 : 开通  通用匹配
@@ -78,6 +79,24 @@ func newNode() *node {
 		children: []*node{},
 	}
 }
+
+func (n *node) parseParamsFromEndNode(url string) map[string]string {
+	result := map[string]string{}
+	segments := strings.Split(url, "/")
+	count := len(segments)
+	current := n
+	for i := count - 1; i >= 0; i-- {
+		if current.segment == "" {
+			break
+		}
+		if isWildSegment(current.segment) {
+			result[current.segment[1:]] = segments[i]
+		}
+		current = current.parent
+	}
+	return result
+}
+
 func (tree *Tree) AddRouter(uri string, handlers []ControllerHandler) error {
 	n := tree.root
 	// 路由冲突
@@ -107,6 +126,7 @@ func (tree *Tree) AddRouter(uri string, handlers []ControllerHandler) error {
 				childNode.isLast = true
 				childNode.handlers = handlers
 			}
+			childNode.parent = n
 			n.children = append(n.children, childNode)
 			objNode = childNode
 		}

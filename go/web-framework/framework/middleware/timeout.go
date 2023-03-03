@@ -31,14 +31,18 @@ func Timeout(d time.Duration) framework.ControllerHandler {
 		// 发生panic
 		case panicInfo := <-panicChan:
 			log.Panicln(panicInfo)
-			c.Json(500, "time out panic")
+			c.Json(map[string]interface{}{
+				"message": "timeout",
+			})
 			// 执行成功
 		case <-finishChan:
 			fmt.Println("finished")
 			//超时
 		case <-durationCtx.Done():
 			c.SetHasTimeout()
-			c.Json(500, "time out ")
+			c.Json(map[string]interface{}{
+				"message": "error",
+			})
 
 		}
 		return nil

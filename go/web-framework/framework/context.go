@@ -1,13 +1,8 @@
 package framework
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"io"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -20,6 +15,8 @@ type Context struct {
 	writerMux      *sync.Mutex
 	handlers       []ControllerHandler
 	index          int
+
+	params map[string]string
 }
 
 // Next 执行下一个handler
@@ -46,6 +43,13 @@ func (ctx *Context) WriterMux() *sync.Mutex {
 }
 func (ctx *Context) GetRequest() *http.Request {
 	return ctx.request
+}
+func (ctx *Context) SetHandlers(handlers []ControllerHandler) {
+	ctx.handlers = handlers
+}
+func (ctx *Context) SetParams(params map[string]string) {
+	ctx.params = params
+
 }
 
 func (ctx *Context) GetResponse() http.ResponseWriter {
@@ -77,128 +81,4 @@ func (ctx *Context) Err() error {
 
 func (ctx *Context) Value(key any) any {
 	return ctx.BaseContext().Value(key)
-}
-func (ctx *Context) QueryAll() map[string][]string {
-	if ctx.request != nil {
-		return ctx.request.URL.Query()
-	}
-	return map[string][]string{}
-}
-
-func (ctx *Context) QueryInt(key string, def int) int {
-	params := ctx.QueryAll()
-	if values, ok := params[key]; ok {
-		length := len(values)
-		if length > 0 {
-			intValue, err := strconv.Atoi(values[length-1])
-			if err != nil {
-				return def
-			}
-			return intValue
-		}
-	}
-	return def
-}
-func (ctx *Context) QueryString(key string, def string) string {
-	params := ctx.QueryAll()
-	if values, ok := params[key]; ok {
-		length := len(values)
-		if length > 0 {
-			return values[length-1]
-		}
-	}
-	return def
-}
-
-func (ctx *Context) QueryArray(key string, def []string) []string {
-	params := ctx.QueryAll()
-	if values, ok := params[key]; ok {
-		return values
-	}
-	return def
-}
-
-func (ctx *Context) FormAll() map[string][]string {
-	if ctx.request == nil {
-		return ctx.request.PostForm
-	}
-	return map[string][]string{}
-}
-
-func (ctx *Context) FormInt(key string, def int) int {
-	params := ctx.FormAll()
-	if values, ok := params[key]; ok {
-		length := len(values)
-		if length > 0 {
-			if intValue, err := strconv.Atoi(values[length-1]); err == nil {
-				return intValue
-			}
-		}
-	}
-	return def
-}
-func (ctx *Context) FormString(key string, def string) string {
-	params := ctx.FormAll()
-	if values, ok := params[key]; ok {
-		length := len(values)
-		if length > 0 {
-			return values[length-1]
-		}
-	}
-	return def
-}
-
-func (ctx *Context) FormArray(key string, def []string) []string {
-	params := ctx.FormAll()
-	if values, ok := params[key]; ok {
-		return values
-	}
-	return def
-}
-
-func (ctx *Context) BindJson(obj interface{}) error {
-	if ctx.request != nil {
-		body, err := io.ReadAll(ctx.request.Body)
-		if err != nil {
-			return err
-		}
-		ctx.request.Body = io.NopCloser(bytes.NewReader(body))
-		err = json.Unmarshal(body, obj)
-		if err != nil {
-			return err
-		}
-	} else {
-		return errors.New("ctx request is nil")
-	}
-	return nil
-}
-
-func (ctx *Context) Json(status int, obj interface{}) error {
-	if ctx.HasTimeout() {
-		return nil
-	}
-	ctx.responseWriter.Header().Set("Content-Type", "application/json")
-	ctx.responseWriter.WriteHeader(status)
-	marshal, err := json.Marshal(obj)
-	if err != nil {
-		ctx.responseWriter.WriteHeader(500)
-		return err
-	}
-	_, err = ctx.responseWriter.Write(marshal)
-	if err != nil {
-		ctx.responseWriter.WriteHeader(500)
-		return err
-	}
-	return nil
-}
-
-func (ctx *Context) HTML(status int, obj interface{}, template string) error {
-	return nil
-}
-func (ctx *Context) TEXT(status int, obj string) error {
-	return nil
-}
-
-func (ctx *Context) SetHandlers(handlers []ControllerHandler) {
-	ctx.handlers = handlers
 }

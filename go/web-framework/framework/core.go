@@ -53,13 +53,13 @@ func (c *Core) Delete(url string, handlers ...ControllerHandler) {
 	}
 }
 
-// FindRouteByRequest 通过请求获取相应的处理方法
-func (c *Core) FindRouteByRequest(request *http.Request) []ControllerHandler {
+// FindRouteNodeByRequest 通过请求获取相应的处理方法
+func (c *Core) FindRouteNodeByRequest(request *http.Request) *node {
 	uri := request.URL.Path
 	method := request.Method
 	upperMethod := strings.ToUpper(method)
 	if methodHandlers, ok := c.router[upperMethod]; ok {
-		return methodHandlers.FindHandler(uri)
+		return methodHandlers.root.matchNode(uri)
 	}
 	return nil
 
@@ -72,14 +72,23 @@ func (c *Core) Group(prefix string) *Group {
 // ServerHTTP 实现handler接口
 func (c *Core) ServeHTTP(response http.ResponseWriter, request *http.Request) {
 	ctx := NewContext(request, response)
-	handlers := c.FindRouteByRequest(request)
-	if handlers == nil {
-		ctx.Json(404, "not found")
+	node := c.FindRouteNodeByRequest(request)
+	if node == nil {
+		ctx.Json(map[string]interface{}{
+			"code":    http.StatusInternalServerError,
+			"message": "node not found",
+		})
 		return
 	}
-	ctx.SetHandlers(handlers)
+	ctx.SetHandlers(node.handlers)
+	params := node.parseParamsFromEndNode(request.URL.Path)
+	ctx.SetParams(params)
+
 	if err := ctx.Next(); err != nil {
-		ctx.Json(500, "internal error")
+		ctx.Json(map[string]interface{}{
+			"code":    http.StatusInternalServerError,
+			"message": "error",
+		})
 		return
 	}
 
