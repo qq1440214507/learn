@@ -5,46 +5,38 @@ import (
 	"fmt"
 	"log"
 	"time"
-	"web-framework/framework"
+	"web-framework/framework/gin"
 )
 
-func Timeout(d time.Duration) framework.ControllerHandler {
-	return func(c *framework.Context) error {
-		// 正常执行完毕
-		finishChan := make(chan struct{}, 1)
-		// 异常chan
+func Timeout(d time.Duration) gin.HandlerFunc {
+	// 使用函数回调
+	return func(c *gin.Context) {
+		finish := make(chan struct{}, 1)
 		panicChan := make(chan interface{}, 1)
+		// 执行业务逻辑前预操作：初始化超时context
 		durationCtx, cancel := context.WithTimeout(c.BaseContext(), d)
 		defer cancel()
+
 		go func() {
 			defer func() {
 				if p := recover(); p != nil {
 					panicChan <- p
 				}
 			}()
-			// 执行业务逻辑
+			// 使用next执行具体的业务逻辑
 			c.Next()
-			finishChan <- struct{}{}
-		}()
-		// 等待执行结果
-		select {
-		// 发生panic
-		case panicInfo := <-panicChan:
-			log.Panicln(panicInfo)
-			c.Json(map[string]interface{}{
-				"message": "timeout",
-			})
-			// 执行成功
-		case <-finishChan:
-			fmt.Println("finished")
-			//超时
-		case <-durationCtx.Done():
-			c.SetHasTimeout()
-			c.Json(map[string]interface{}{
-				"message": "error",
-			})
 
+			finish <- struct{}{}
+		}()
+		// 执行业务逻辑后操作
+		select {
+		case p := <-panicChan:
+			c.ISetStatus(500).IJson("time out")
+			log.Println(p)
+		case <-finish:
+			fmt.Println("finish")
+		case <-durationCtx.Done():
+			c.ISetStatus(500).IJson("time out")
 		}
-		return nil
 	}
 }
