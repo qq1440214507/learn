@@ -1,0 +1,43 @@
+{
+  "format": {
+    "dateTime": {
+      "longDatePattern": "dddd, MMMM d, yyyy",
+      "longTimePattern": "h:mm:ss tt",
+      "shortDatePattern": "M/d/yyyy",
+      "shortTimePattern": "h:mm tt"
+    },
+    "currencyDecimal": {
+      "digits": 2,
+      "symbol": "$"
+    },
+    "center": "(123,456)",
+    "profile": {
+      "gender": "Male",
+      "age": 20,
+      "contactInfo:emailAddress": "1441231278@qq.com",
+      "contactInfo:phoneNo" : "123456"
+    },
+    "profiles": {
+      "0:gender": "Male",
+      "0:age": 20,
+      "0:contactInfo:emailAddress": "1441231278@qq.com",
+      "0:contactInfo:phoneNo" : "12356",
+
+      "1:gender": "Male",
+      "1:age": 21,
+      "1:contactInfo:emailAddress": "1241231278@qq.com",
+      "1:contactInfo:phoneNo" : "1233333"
+    },
+    "profileMap": {
+      "tidy:gender": "Male",
+      "tidy:age": 21,
+      "tidy:contactInfo:emailAddress": "1241231278@qq.com",
+      "tidy:contactInfo:phoneNo" : "1233333",
+
+      "angel:gender": "Male",
+      "angel:age": 21,
+      "angel:contactInfo:emailAddress": "1241231278@qq.com",
+      "angel:contactInfo:phoneNo" : "1233333"
+    }
+  }
+}
